@@ -15,32 +15,10 @@ echo $($PSQL "TRUNCATE games, teams")
 
 cat games.csv | while IFS="," read YEAR ROUND WINNER OPPONENT WINNER_GOALS OPPONENT_GOALS
 do
-  # check if header row
-  if [[ $YEAR != year ]]
+  # insert games data, checking header row
+  if [[ $YEAR != year && $ROUND != round && $WINNER_GOALS != winner_goals && $OPPONENT_GOALS != opponent_goals ]]
   then
-    # insert years
-    INSERT_YEAR_RESULT=$($PSQL "INSERT INTO games(year) VALUES('$YEAR')")
-    if [[ $INSERT_YEAR_RESULT == "INSERT 0 1" ]]
-    then
-      echo Inserted year into games, $YEAR
-    fi
-  fi
-
-  # check if header row
-  if [[ $ROUND != round ]]
-  then
-    # insert round
-    INSERT_ROUND_RESULT=$($PSQL "INSERT INTO games(round) VALUES('$ROUND')")
-    if [[ $INSERT_ROUND_RESULT == "INSERT 0 1" ]]
-    then
-      echo Inserted round into games, $ROUND
-    fi
-  fi
-
-  # check if header row
-  if [[ $WINNER != winner ]]
-  then
-    # get winner id
+    # find winner_id
     WINNER_ID=$($PSQL "SELECT team_id FROM teams WHERE name='$WINNER'")
     # if not found
     if [[ -z $WINNER_ID ]]
@@ -51,13 +29,10 @@ do
       then
         echo Inserted winning team into teams, $WINNER
       fi
+      # get new winner_id
+      WINNER_ID=$($PSQL "SELECT team_id FROM teams WHERE name='$WINNER'")
     fi
-  fi
-
-  # check if header row
-  if [[ $OPPONENT != opponent ]]
-  then
-    # get opponent id
+    # find opponent_id
     OPPONENT_ID=$($PSQL "SELECT team_id FROM teams WHERE name='$OPPONENT'")
     # if not found
     if [[ -z $OPPONENT_ID ]]
@@ -68,28 +43,14 @@ do
       then
         echo Inserted opponent team into teams, $OPPONENT
       fi
+      # get new opponent_id
+      OPPONENT_ID=$($PSQL "SELECT team_id FROM teams WHERE name='$OPPONENT'")
     fi
-  fi
-
-  # check if header row
-  if [[ $WINNER_GOALS != winner_goals ]]
-  then
-    # insert winner goals
-    INSERT_WINNERGOALS_RESULT=$($PSQL "INSERT INTO games(winner_goals) VALUES('$WINNER_GOALS')")
-    if [[ $INSERT_WINNERGOALS_RESULT == "INSERT 0 1" ]]
+    # check if successful
+    INSERT_GAME_RESULT=$($PSQL "INSERT INTO games(year, round, winner_id, opponent_id, winner_goals, opponent_goals) VALUES('$YEAR', '$ROUND', '$WINNER_ID', '$OPPONENT_ID', '$WINNER_GOALS', '$OPPONENT_GOALS')")
+    if [[ $INSERT_GAME_RESULT == "INSERT 0 1" ]]
     then
-      echo Inserted winner_goals into games, $WINNER_GOALS
-    fi
-  fi
-  
-  # check if header row
-  if [[ $OPPONENT_GOALS != opponent_goals ]]
-  then
-    # insert winner goals
-    INSERT_OPPONENTGOALS_RESULT=$($PSQL "INSERT INTO games(opponent_goals) VALUES('$OPPONENT_GOALS')")
-    if [[ $INSERT_OPPONENTGOALS_RESULT == "INSERT 0 1" ]]
-    then
-      echo Inserted opponent_goals into games, $OPPONENT_GOALS
+      echo Inserted game into games, $YEAR $ROUND $WINNER_ID $OPPONENT_ID $WINNER_GOALS $OPPONENT_GOALS
     fi
   fi
 done
